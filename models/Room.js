@@ -7,8 +7,6 @@ const RoomSchema = new Schema({
     image: String, 
     admins: Array,
     projects: Array,
-    adminof: Array,
-    spectators: Array
     
 })
 

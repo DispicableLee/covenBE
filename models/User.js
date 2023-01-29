@@ -9,7 +9,8 @@ const UserSchema = new Schema({
     rooms: Array,
     projects: Array,
     adminof: Array,
-    spectating: Array
+    spectating: Array,
+    contributing: Array
     
 })
 
