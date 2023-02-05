@@ -7,7 +7,7 @@ const RoomSchema = new Schema({
     image: String, 
     admins: Array,
     projects: Array,
-    
+    messages: Array
 })
 
 module.exports = mongoose.model("Room", RoomSchema);

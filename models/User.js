@@ -10,7 +10,8 @@ const UserSchema = new Schema({
     projects: Array,
     adminof: Array,
     spectating: Array,
-    contributing: Array
+    contributing: Array,
+    messages: Array
     
 })
 

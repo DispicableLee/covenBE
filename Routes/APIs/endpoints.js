@@ -8,6 +8,7 @@ const e = require("express");
 const Room = require("../../models/Room");
 const User = require("../../models/User");
 const Project = require("../../models/Project")
+const Message = require("../../models/Message")
 
 //======================= USER ENDPOINTS ===============================
 //======================================================================
@@ -39,6 +40,23 @@ router.get("/search/user/:userid", async(req,res)=>{
         return res.status(400).send({})
     }
 })
+
+//GET a single user by their password
+//http://localhost:4002/api/v2/endPoints/userlogin/:password
+router.get("/userlogin/:password", async(req,res)=>{
+    const user = await User.findOne({password: req.params.password})
+    if(user){
+        return res.status(200).send(user)
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+
+
+
+
 
 //===================== ROOM ENDPOINTS =================================
 //======================================================================
@@ -215,6 +233,40 @@ router.put("/contributor/:userid/:projectid", async(req,res)=>{
         }else{
             return res.status(400).send({})
         }
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+//=========================== MESSAGE ENDPOINTS =========================================
+//=======================================================================================
+//POST - a user sends a message to another user
+//http://localhost:4002/api/v2/endPoints/new/message/:senderid/:recieverid
+router.post("/new/message/:recieverid", async(req,res)=>{
+    const recieverID = req.params.recieverid
+    const recieverObjectID = ObjectID(recieverID)
+    const reciever = await User.findById(recieverObjectID)
+    if(reciever){
+        const newMessage = new Message(req.body)
+        const messageId = newMessage._id
+        const receiverMessages = reciever.messages
+        receiverMessages.unshift(messageId)
+        var recieverQuery = {_id: reciever._id}
+        var receiverUpdatedValues = {     
+            username: reciever.username,
+            password: reciever.password,
+            image: reciever.image, 
+            rooms: reciever.rooms,
+            projects: reciever.projects,
+            adminof: reciever.adminof,
+            spectating: reciever.spectating,
+            contributing: reciever.contributing,
+            messages: receiverMessages
+        }
+        await User.findOneAndUpdate(recieverQuery,receiverUpdatedValues)
+        newMessage.save().catch((err)=>console.log(err))
+        return res.status(200).send(newMessage)
     }else{
         return res.status(400).send({})
     }

@@ -9,6 +9,7 @@ const ProjectSchema = new Schema({
     description: String,
     contributors: Array,
     spectators: Array,
+    messages: Array,
     link: String
     
 })
