@@ -107,12 +107,83 @@ router.get("/search/all/rooms", async(req,res)=>{
     return res.status(200).send(rooms)
 })
 
+//GET a single room by id
+//http://localhost:4002/api/v2/endPoints/search/room/:roomid
+router.get("/search/room/:roomid", async(req,res)=>{
+    const roomObjectId = ObjectID(req.params.roomid)
+    const room = await Room.findById(roomObjectId)
+    if(room){
+        return res.status(200).send(room)
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+//GET all messages in a room
+//http://localhost:4002/api/v2/endPoints/search/all/messages/room/:roomid
+router.get("/search/all/messages/room/:roomid", async(req,res)=>{
+    console.log("hi")
+    const roomid = req.params.roomid
+    const roomObjectId = ObjectID(roomid)
+    const room = await Room.findById(roomObjectId)
+    if(room){
+        const roomMessages = room.messages
+        const fetchedMessages = await Message.find({_id:{$in: roomMessages}})
+        return res.status(200).send(fetchedMessages)
+    }else{
+        return res.status(400).send({})
+    }
+})
 
 
 
 
 //========================== PROJECT ENDPOINTS ===========================
 //========================================================================
+
+//GET all projects
+//http://localhost:4002/api/v2/endPoints/search/all/projects
+router.get("/search/all/projects", async(req,res)=>{
+    const allProjects = await Project.find()
+    return res.status(200).send(allProjects)
+})
+//GET a single project and all its info by it's id
+//http://localhost:4002/api/v2/endPoints/search/project/:projectid
+router.get("/search/project/:projectid", async(req,res)=>{
+    const projectid = req.params.projectid
+    const projectObjectId = ObjectID(projectid)
+    const project = await Project.findById(projectObjectId)
+    // const projectContributors = await User.find({_id:{$in: project.contributors}})
+    if(project){
+        return res.status(200).send(project)
+    }else{
+        return res.status(400).send({})
+
+    }
+})
+
+//GET all info about one project
+    //contributors
+    //spectators
+    //messages
+//http://localhost:4002/api/v2/endPoints/search/allprojectinfo/:projectid
+router.get("/search/allprojectinfo/:projectid", async(req,res)=>{
+    const projectid = req.params.projectid
+    const projectObjectId = ObjectID(projectid)
+    const project = await Project.findById(projectObjectId)
+    if(project){
+        const projectContributors = await User.find({_id:{$in: project.contributors}})
+        const projectSpectators = await User.find({_id:{$in: project.spectators}})
+        const projectMessages = await Message.find({_id:{$in: project.messages}})
+        return res.status(200).send([projectContributors, projectSpectators, projectMessages])
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+
+
 
 //POST a new project
 //http://localhost:4002/api/v2/endPoints/new/project/:userid
@@ -132,7 +203,7 @@ router.post("/new/project/:userid", async(req,res)=>{
             username: user.username,
             password: user.password,
             image: user.image, 
-            rooms: userRooms,
+            rooms: user.rooms,
             projects: userProjects,
             adminof: userAdminOf,
             spectating: user.spectating,
@@ -272,6 +343,60 @@ router.post("/new/message/:recieverid", async(req,res)=>{
     }
 })
 
+
+//POST a new message to a room's message array
+//http://localhost:4002/api/v2/endPoints/new/message/room/:userid/:roomid
+router.post("/new/message/room/:senderid/:roomid", async(req,res)=>{
+    //check if the room exists
+    const roomid = req.params.roomid
+    const roomObjectId = ObjectID(roomid)
+    const room = await Room.findById(roomObjectId)
+    if(room){
+        //check if the sender exists
+        const userid = req.params.senderid
+        const userObjectID = ObjectID(userid)
+        const user = await User.findById(userObjectID)
+        if(user){
+            //if both the room and the user exist, create the message
+            const newMessage = new Message(req.body)
+            //add the message id the user's message array
+            const userMessages = user.messages
+            userMessages.unshift(newMessage._id)
+            //update users information
+            var userQuery = {_id:user._id}
+            var userUpdatedValues = {
+                username: user.username,
+                password: user.password,
+                image: user.image, 
+                rooms: user.rooms,
+                projects: user.projects,
+                adminof: user.adminof,
+                spectating: user.spectating,
+                contributing: user.contributing,
+                messages: userMessages
+            }
+            //add message id to room message array
+            const roomMessages = room.messages
+            roomMessages.unshift(newMessage._id)
+            var roomQuery = {_id:room._id}
+            var roomUpdatedValues = {
+                name: room.name,
+                image: room.image, 
+                admins: room.admins,
+                projects: room.projects,
+                messages: roomMessages
+            }
+            await User.findOneAndUpdate(userQuery, userUpdatedValues)
+            await Room.findOneAndUpdate(roomQuery, roomUpdatedValues)
+            newMessage.save().catch((err)=>console.log(err))
+            return res.status(200).send([newMessage, userUpdatedValues, roomUpdatedValues])
+        }else{
+            return res.status(400).send({})
+        }
+    }else{
+        return res.status(400).send({})
+    }
+})
 
 
 
