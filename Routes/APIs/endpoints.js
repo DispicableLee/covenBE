@@ -41,11 +41,11 @@ router.get("/search/user/:userid", async(req,res)=>{
     }
 })
 
-//GET a single user by their password
-//http://localhost:4002/api/v2/endPoints/userlogin/:password
-router.get("/userlogin/:password", async(req,res)=>{
+//GET a single user by LOGGING IN with USERNAME and PASSWORD
+//http://localhost:4002/api/v2/endPoints/userlogin/:username/:password
+router.get("/userlogin/:username/:password", async(req,res)=>{
     const user = await User.findOne({password: req.params.password})
-    if(user){
+    if(user.username==req.params.username){
         return res.status(200).send(user)
     }else{
         return res.status(400).send({})
